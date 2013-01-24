@@ -473,11 +473,36 @@ function PlayX.SendBeginDStream(ply)
 	end
 end
 
+--Start playing if player is in range
+--Stops playing if player is out of range
+function PlayerTick( ply, movedata )
+    local instance = PlayX.GetInstance()
+	local range = 1718
+    if instance ~= nil then
+		local distance = ply:GetPos():Distance(instance:GetPos())
+		if(distance<=range and not ply.playxIsPlaying) then
+      --print(ply:GetName() .. ', SendBeginDStream, distance: ' .. distance)
+			ply.playxIsPlaying = true
+			PlayX.SendBeginDStream(ply)
+		elseif(distance>range and ply.playxIsPlaying) then
+      --print(ply:GetName() .. ', SendEndUMsg, distance: ' .. distance)
+			ply.playxIsPlaying = false
+			PlayX.SendEndUMsg(ply)
+		end
+	end
+end
+hook.Add("PlayerTick", "PlayXPlayerTick", PlayerTick)
+
 --- Send the PlayXEnd umsg to clients. You should not have much of a
 -- a reason to call this method.
-function PlayX.SendEndUMsg()
-    local filter = RecipientFilter()
-    filter:AddAllPlayers()
+function PlayX.SendEndUMsg(ply)
+	local filter = nil
+	
+    if ply then
+        filter = ply
+    else
+        filter = player.GetHumans()
+    end
     
     umsg.Start("PlayXEnd", filter)
     umsg.End()
